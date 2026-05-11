@@ -1,0 +1,546 @@
+//FRONTEND CODE
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generator Laporan Giat Inspektorat BASARNAS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f1f5f9;
+        }
+
+        .card-premium {
+            background: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            border: 1px solid #e2e8f0;
+        }
+
+        .large-input {
+            width: 100%;
+            font-size: 0.85rem;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.375rem;
+            border: 1px solid #cbd5e1;
+            transition: all 0.2s;
+        }
+
+        .large-input:focus {
+            outline: none;
+            border-color: #0369a1;
+            box-shadow: 0 0 0 3px rgba(3, 105, 161, 0.1);
+        }
+
+        .label-style {
+            font-size: 0.65rem;
+            font-weight: 700;
+            color: #475569;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+            margin-bottom: 0.25rem;
+            display: block;
+        }
+
+        /* Desain Kertas Laporan Formal */
+        .report-paper {
+            background-color: white;
+            padding: 3cm 2.5cm 3cm 3cm; 
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            color: #000;
+            line-height: 1.5;
+            min-height: 297mm;
+            width: 210mm;
+            margin: auto;
+            font-family: 'Times New Roman', Times, serif;
+            position: relative;
+        }
+
+        .report-header {
+            text-align: center;
+            border-bottom: 2.5px solid #000;
+            padding-bottom: 12px;
+            margin-bottom: 30px;
+        }
+
+        .report-header p.top-agency {
+            font-size: 13pt;
+            font-weight: bold;
+            margin: 0;
+            letter-spacing: 1px;
+        }
+
+        .report-header h1 {
+            font-size: 15pt;
+            font-weight: bold;
+            margin: 0;
+            text-transform: uppercase;
+        }
+
+        .report-content {
+            font-size: 12pt;
+            text-align: justify;
+        }
+
+        .section-title {
+            font-weight: bold;
+            margin-top: 18px;
+            display: block;
+            text-transform: uppercase;
+        }
+
+        .section-content {
+            margin-left: 28px;
+            margin-top: 4px;
+        }
+
+        /* Kolase Dokumentasi */
+        .collage-container {
+            display: grid;
+            gap: 20px;
+            margin-top: 50px;
+            page-break-before: always;
+        }
+
+        .collage-item {
+            border: 1px solid #000;
+            padding: 8px;
+            text-align: center;
+        }
+
+        .collage-item img {
+            width: 100%;
+            height: auto;
+            margin-bottom: 8px;
+        }
+
+        .grid-1 { grid-template-columns: 1fr; }
+        .grid-2, .grid-3, .grid-4, .grid-5 { grid-template-columns: 1fr 1fr; }
+
+        @media print { 
+            .no-print { display: none; }
+            body { background: white; padding: 0; }
+            .report-paper { box-shadow: none; border: none; width: 100%; margin: 0; }
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <div class="max-w-[1600px] mx-auto">
+        <div class="grid grid-cols-1 xl:grid-cols-12 gap-8">
+            
+            <!-- INPUT FORMULIR (KIRI) -->
+            <div class="xl:col-span-5 space-y-6 no-print">
+                <div class="card-premium overflow-hidden">
+                    <div class="bg-sky-900 p-5 text-white">
+                        <h2 class="text-lg font-bold">INPUT FORMULIR LAPORAN</h2>
+                        <p class="text-[10px] opacity-70">Inspektorat Badan Nasional Pencarian dan Pertolongan</p>
+                    </div>
+
+                    <div class="p-6 space-y-5">
+                        <!-- Salam -->
+                        <div>
+                            <label class="label-style">Salam Pembuka</label>
+                            <select id="salam" class="large-input" onchange="generateReport()">
+                                <option value="Selamat Pagi">Selamat Pagi</option>
+                                <option value="Selamat Siang">Selamat Siang</option>
+                                <option value="Selamat Sore">Selamat Sore</option>
+                                <option value="Selamat Malam">Selamat Malam</option>
+                            </select>
+                        </div>
+
+                        <!-- Dasar -->
+                        <div>
+                            <label class="label-style">Dasar Kegiatan (Surat Tugas/Nota Dinas)</label>
+                            <input type="text" id="dasar" placeholder="Nomor Surat Tugas" class="large-input" oninput="generateReport()">
+                        </div>
+
+                        <!-- Nama Giat -->
+                        <div>
+                            <label class="label-style">Nama Kegiatan</label>
+                            <textarea id="namaGiat" rows="2" placeholder="Nama lengkap kegiatan..." class="large-input" oninput="generateReport()"></textarea>
+                        </div>
+
+                        <!-- Waktu & Tanggal -->
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="label-style">Tanggal Mulai</label>
+                                <input type="date" id="tanggalMulai" class="large-input" oninput="generateReport()">
+                            </div>
+                            <div>
+                                <label class="label-style">Tanggal Selesai</label>
+                                <input type="date" id="tanggalSelesai" class="large-input" oninput="generateReport()">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="label-style">Waktu Mulai</label>
+                                <input type="time" id="waktuMulai" value="08:00" class="large-input" oninput="generateReport()">
+                            </div>
+                            <div>
+                                <label class="label-style">Waktu Selesai</label>
+                                <input type="time" id="waktuSelesai" value="16:00" class="large-input" oninput="generateReport()">
+                            </div>
+                        </div>
+
+                        <!-- Lokasi -->
+                        <div>
+                            <label class="label-style">Lokasi Kegiatan</label>
+                            <input type="text" id="tempat" placeholder="Gedung, Kota/Provinsi" class="large-input" oninput="generateReport()">
+                        </div>
+
+                        <!-- Pimpinan Kegiatan -->
+                        <div class="bg-sky-50 p-3 rounded-lg border border-sky-100">
+                            <div class="flex justify-between items-center mb-2">
+                                <label class="label-style m-0 text-sky-800">Pimpinan Kegiatan</label>
+                                <button onclick="addLeader()" class="text-[10px] font-bold text-sky-600 hover:underline">+ TAMBAH PIMPINAN</button>
+                            </div>
+                            <div id="leaderContainer" class="space-y-3"></div>
+                        </div>
+
+                        <!-- Peserta Kegiatan -->
+                        <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                            <div class="flex justify-between items-center mb-2">
+                                <label class="label-style m-0">Peserta / Anggota Tim</label>
+                                <button onclick="addParticipant()" class="text-[10px] font-bold text-orange-600 hover:underline">+ TAMBAH PESERTA</button>
+                            </div>
+                            <div id="participantContainer" class="space-y-3"></div>
+                        </div>
+
+                        <!-- Tujuan -->
+                        <div>
+                            <label class="label-style">Tujuan Kegiatan</label>
+                            <textarea id="tujuan" rows="2" placeholder="Tujuan dilaksanakannya kegiatan..." class="large-input" oninput="generateReport()"></textarea>
+                        </div>
+
+                        <!-- Pembahasan -->
+                        <div>
+                            <label class="label-style">Poin Pembahasan</label>
+                            <textarea id="pembahasan" rows="6" placeholder="Hasil pelaksanaan giat..." class="large-input" oninput="generateReport()"></textarea>
+                            <button id="btnAi" onclick="enhanceWithAI()" class="mt-2 w-full bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-bold py-2 rounded flex items-center justify-center gap-2">
+                                <span id="aiIcon">✨</span> OPTIMASI NARASI FORMAL (AI)
+                                <div id="aiLoader" class="hidden animate-spin h-3 w-3 border-2 border-white border-t-transparent rounded-full"></div>
+                            </button>
+                        </div>
+
+                        <!-- Foto -->
+                        <div class="bg-orange-50 border-2 border-dashed border-orange-200 p-4 rounded-xl">
+                            <label class="label-style text-orange-700">Dokumentasi (Maks 5 Foto)</label>
+                            <input type="file" id="photoUpload" accept="image/*" multiple onchange="processPhotos(this)" class="hidden">
+                            <label for="photoUpload" class="block text-center p-3 bg-white border rounded-md cursor-pointer hover:bg-orange-100 transition text-[11px] font-bold text-slate-500 uppercase">
+                                Pilih File Gambar
+                            </label>
+                            <div id="photoList" class="flex flex-wrap gap-2 mt-3"></div>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="grid grid-cols-3 gap-2 pt-4">
+                            <button onclick="exportToPDF()" class="bg-rose-600 text-white py-3 rounded-lg font-bold text-[10px] uppercase tracking-wider shadow-lg hover:bg-rose-700">Cetak PDF</button>
+                            <button onclick="exportToWord()" class="bg-blue-900 text-white py-3 rounded-lg font-bold text-[10px] uppercase tracking-wider shadow-lg hover:bg-blue-950">Simpan Word</button>
+                            <button onclick="sendToWhatsApp()" class="bg-emerald-600 text-white py-3 rounded-lg font-bold text-[10px] uppercase tracking-wider shadow-lg hover:bg-emerald-700 flex items-center justify-center gap-1">
+                                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L0 24l6.335-1.662c1.72.937 3.672 1.433 5.662 1.435h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg> WhatsApp
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PREVIEW LAPORAN (KANAN) -->
+            <div class="xl:col-span-7 overflow-x-auto bg-slate-400 p-4 md:p-10 rounded-xl">
+                <div id="reportContentArea" class="report-paper">
+                    <!-- KOP SURAT (Disederhanakan sesuai permintaan) -->
+                    <div class="report-header">
+                        <p class="top-agency">BADAN NASIONAL PENCARIAN DAN PERTOLONGAN</p>
+                        <h1>INSPEKTORAT</h1>
+                    </div>
+                    
+                    <!-- JUDUL LAPORAN -->
+                    <div style="text-align: center; margin-bottom: 30px;">
+                        <p style="font-weight:bold; text-decoration: underline; font-size: 14pt; margin:0;">LAPORAN HASIL KEGIATAN</p>
+                        <p style="font-size: 12pt; margin:0;" id="reportNumberDisplay">NOMOR: ........................................</p>
+                    </div>
+
+                    <!-- ISI LAPORAN -->
+                    <div class="report-content">
+                        <div id="dynamicContent"></div>
+                        <div id="collageContainer" class="collage-container"></div>
+
+                        <!-- TANDA TANGAN -->
+                        <div class="mt-20 flex justify-end">
+                            <div class="text-center w-72">
+                                <p id="tglLaporan">Jakarta, ...</p>
+                                <p class="mb-24">Petugas Pelapor,</p>
+                                <p class="font-bold underline" id="namaTTD">( ........................................ )</p>
+                                <p id="jabatanTTD">Jabatan ........................</p>
+                                <p id="nipTTD">NIP. ........................................</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const apiKey = ""; 
+        let uploadedImages = [];
+
+        function removeEmojis(text) {
+            if (!text) return "";
+            return text.replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF])/g, '');
+        }
+
+        function addLeader() {
+            const container = document.getElementById('leaderContainer');
+            const div = document.createElement('div');
+            div.className = "p-3 bg-white border border-sky-200 rounded-md shadow-sm space-y-2 relative";
+            div.innerHTML = `
+                <button onclick="this.parentElement.remove(); generateReport();" class="absolute top-1 right-2 text-red-400 hover:text-red-600 font-bold">×</button>
+                <input type="text" placeholder="Nama Pimpinan & NIP" class="large-input text-[11px]" oninput="generateReport()">
+                <div class="grid grid-cols-2 gap-2">
+                    <input type="text" placeholder="Jabatan" class="large-input text-[11px]" oninput="generateReport()">
+                    <input type="text" placeholder="Asal Instansi" class="large-input text-[11px]" oninput="generateReport()">
+                </div>
+            `;
+            container.appendChild(div);
+            generateReport();
+        }
+
+        function addParticipant() {
+            const container = document.getElementById('participantContainer');
+            const div = document.createElement('div');
+            div.className = "p-3 bg-white border border-slate-200 rounded-md shadow-sm space-y-2 relative";
+            div.innerHTML = `
+                <button onclick="this.parentElement.remove(); generateReport();" class="absolute top-1 right-2 text-red-400 hover:text-red-600 font-bold">×</button>
+                <input type="text" placeholder="Nama Peserta & NIP" class="large-input text-[11px]" oninput="generateReport()">
+                <div class="grid grid-cols-2 gap-2">
+                    <input type="text" placeholder="Jabatan" class="large-input text-[11px]" oninput="generateReport()">
+                    <input type="text" placeholder="Asal Instansi" class="large-input text-[11px]" oninput="generateReport()">
+                </div>
+            `;
+            container.appendChild(div);
+            generateReport();
+        }
+
+        async function processPhotos(input) {
+            const files = Array.from(input.files);
+            const slot = 5 - uploadedImages.length;
+            for (const f of files.slice(0, slot)) {
+                const base64 = await compress(f);
+                uploadedImages.push(base64);
+            }
+            renderPhotos();
+            input.value = "";
+        }
+
+        function compress(file) {
+            return new Promise(r => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = e => {
+                    const img = new Image();
+                    img.src = e.target.result;
+                    img.onload = () => {
+                        const canv = document.createElement('canvas');
+                        const ctx = canv.getContext('2d');
+                        const w = 1200;
+                        const h = (img.height * w) / img.width;
+                        canv.width = w; canv.height = h;
+                        ctx.drawImage(img, 0, 0, w, h);
+                        r(canv.toDataURL('image/jpeg', 0.85));
+                    }
+                }
+            });
+        }
+
+        function renderPhotos() {
+            const list = document.getElementById('photoList');
+            const coll = document.getElementById('collageContainer');
+            list.innerHTML = ""; coll.innerHTML = "";
+            if (uploadedImages.length > 0) coll.className = `collage-container grid-${uploadedImages.length}`;
+            uploadedImages.forEach((src, i) => {
+                const p = document.createElement('div');
+                p.className = "relative w-12 h-12 border rounded overflow-hidden";
+                p.innerHTML = `<img src="${src}" class="w-full h-full object-cover"><button onclick="removePh(${i})" class="absolute inset-0 bg-red-500/50 text-white opacity-0 hover:opacity-100 font-bold">×</button>`;
+                list.appendChild(p);
+                const itm = document.createElement('div');
+                itm.className = "collage-item";
+                itm.innerHTML = `<img src="${src}"><p style="font-size: 10pt; margin: 0;">Dokumentasi Gambar ${i+1}</p>`;
+                coll.appendChild(itm);
+            });
+        }
+
+        function removePh(i) {
+            uploadedImages.splice(i, 1);
+            renderPhotos();
+        }
+
+        function generateReport() {
+            const v = id => document.getElementById(id).value || '................';
+            document.getElementById('reportNumberDisplay').innerText = `NOMOR: ${v('dasar')}`;
+            
+            const leaders = Array.from(document.querySelectorAll('#leaderContainer > div')).map(d => {
+                const ins = d.querySelectorAll('input');
+                return { nama: ins[0].value, jab: ins[1].value, instansi: ins[2].value };
+            }).filter(x => x.nama);
+
+            const participants = Array.from(document.querySelectorAll('#participantContainer > div')).map(d => {
+                const ins = d.querySelectorAll('input');
+                return { nama: ins[0].value, jab: ins[1].value, instansi: ins[2].value };
+            }).filter(x => x.nama);
+
+            const tglText = v('tanggalMulai') === v('tanggalSelesai') ? v('tanggalMulai') : `${v('tanggalMulai')} s.d. ${v('tanggalSelesai')}`;
+            const waktuText = `${v('waktuMulai')} s.d. ${v('waktuSelesai')} WIB`;
+
+            const html = `
+                <p><span class="section-title">I. PENDAHULUAN</span></p>
+                <div class="section-content">
+                    <p>${v('salam')}, sehubungan dengan ${v('dasar')} perihal pelaksanaan kegiatan <strong>${v('namaGiat')}</strong>, dengan ini disampaikan laporan pelaksanaan tersebut sebagai bentuk pertanggungjawaban tugas kedinasan.</p>
+                </div>
+
+                <p><span class="section-title">II. MAKSUD DAN TUJUAN</span></p>
+                <div class="section-content">
+                    <p>${v('tujuan')}</p>
+                </div>
+
+                <p><span class="section-title">III. WAKTU DAN TEMPAT</span></p>
+                <div class="section-content">
+                    <table style="width: 100%;">
+                        <tr><td style="width: 30%; vertical-align: top;">Hari/Tanggal</td><td style="width: 3%;">:</td><td>${tglText}</td></tr>
+                        <tr><td style="vertical-align: top;">Waktu</td><td>:</td><td>${waktuText}</td></tr>
+                        <tr><td style="vertical-align: top;">Tempat</td><td>:</td><td>${v('tempat')}</td></tr>
+                    </table>
+                </div>
+
+                <p><span class="section-title">IV. TIM PELAKSANA</span></p>
+                <div class="section-content">
+                    <p style="font-weight:bold; margin-bottom: 2px;">Pimpinan Kegiatan:</p>
+                    <ol style="margin-top: 0;">
+                        ${leaders.map(p => `<li>${p.nama} (${p.jab} - ${p.instansi})</li>`).join('') || '<li>(Belum diisi)</li>'}
+                    </ol>
+                    <p style="font-weight:bold; margin-bottom: 2px;">Peserta / Anggota:</p>
+                    <ol style="margin-top: 0;">
+                        ${participants.map(p => `<li>${p.nama} (${p.jab} - ${p.instansi})</li>`).join('') || '<li>(Belum diisi)</li>'}
+                    </ol>
+                </div>
+
+                <p><span class="section-title">V. HASIL KEGIATAN DAN PEMBAHASAN</span></p>
+                <div class="section-content">
+                    ${v('pembahasan').split('\n').filter(p => p.trim()).map(p => `<p style="margin-bottom: 8px;">• ${p.trim()}</p>`).join('') || '<p>(Belum ada data pembahasan)</p>'}
+                </div>
+
+                <p><span class="section-title">VI. PENUTUP</span></p>
+                <div class="section-content">
+                    <p>Demikian laporan ini dibuat dengan sebenarnya untuk dapat dipergunakan sebagai bahan pertimbangan lebih lanjut. Atas perhatian dan petunjuk Bapak Inspektur, diucapkan terima kasih.</p>
+                </div>
+            `;
+
+            document.getElementById('dynamicContent').innerHTML = html;
+            document.getElementById('tglLaporan').innerText = `Jakarta, ${new Date().toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'})}`;
+            
+            if(leaders.length > 0) {
+                document.getElementById('namaTTD').innerText = `( ${leaders[0].nama} )`;
+                document.getElementById('jabatanTTD').innerText = leaders[0].jab || 'Petugas Pelapor';
+                document.getElementById('nipTTD').innerText = `Asal: ${leaders[0].instansi || '-'}`;
+            }
+        }
+
+        async function enhanceWithAI() {
+            const btn = document.getElementById('btnAi');
+            const txt = document.getElementById('pembahasan').value;
+            if(!txt) return;
+            btn.disabled = true;
+            document.getElementById('aiLoader').classList.remove('hidden');
+            document.getElementById('aiIcon').classList.add('hidden');
+            try {
+                const prompt = `Ubah catatan kegiatan berikut menjadi narasi formal laporan audit/inspektorat BASARNAS yang sistematis, teknis, dan berwibawa. \n\nSyarat Penting:\n1. GUNAKAN BAHASA INDONESIA FORMAL (EYD).\n2. DILARANG MENGGUNAKAN EMOJI ATAU SIMBOL DEKORATIF APAPUN.\n3. Jangan gunakan tanda bintang (*) sebagai dekorasi berlebihan.\n4. Fokus pada hasil capaian kegiatan.\n\nCatatan:\n${txt}`;
+                
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                });
+                const res = await response.json();
+                let result = res.candidates?.[0]?.content?.parts?.[0]?.text;
+                
+                if(result) {
+                    result = removeEmojis(result).trim();
+                    document.getElementById('pembahasan').value = result;
+                    generateReport();
+                }
+            } catch (e) {
+                console.error(e);
+            } finally {
+                btn.disabled = false;
+                document.getElementById('aiLoader').classList.add('hidden');
+                document.getElementById('aiIcon').classList.remove('hidden');
+            }
+        }
+
+        function exportToPDF() {
+            const element = document.getElementById('reportContentArea');
+            const opt = {
+                margin: 0,
+                filename: `Laporan_Giat_Inspektorat.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 3, useCORS: true },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+            html2pdf().set(opt).from(element).save();
+        }
+
+        function exportToWord() {
+            const content = document.getElementById('reportContentArea').innerHTML;
+            const blob = new Blob(['\ufeff', `<html><head><meta charset="utf-8"></head><body>${content}</body></html>`], { type: 'application/msword' });
+            saveAs(blob, `Laporan_Giat_Inspektorat.doc`);
+        }
+
+       function sendToWhatsApp() {
+    try {
+        const v = id => {
+            const el = document.getElementById(id);
+            return (el && el.value.trim() !== '') ? el.value : '................';
+        };
+
+        // Ambil data pimpinan dengan pengecekan ekstra
+        const leaders = Array.from(document.querySelectorAll('#leaderContainer > div')).map(d => {
+            const ins = d.querySelectorAll('input');
+            if (ins && ins.length >= 3) {
+                return `- ${ins[0].value || '...'} (${ins[1].value || '...'} - ${ins[2].value || '...'})`;
+            }
+            return null;
+        }).filter(item => item !== null).join('\n') || '................';
+
+        const tglText = v('tanggalMulai') === v('tanggalSelesai') ? v('tanggalMulai') : `${v('tanggalMulai')} s.d. ${v('tanggalSelesai')}`;
+        const waktuText = `${v('waktuMulai')} s.d. ${v('waktuSelesai')} WIB`;
+        
+        // Proteksi jika removeEmojis belum dibuat
+        const isiPembahasan = v('pembahasan');
+        const pembahasanFormal = (typeof removeEmojis === 'function') ? removeEmojis(isiPembahasan) : isiPembahasan;
+
+        let waMsg = `*LAPORAN HASIL KEGIATAN*\n`;
+        waMsg += `*INSPEKTORAT BASARNAS*\n\n`;
+        waMsg += `${v('salam')},\nIzin melaporkan hasil pelaksanaan kegiatan:\n\n`;
+        waMsg += `*1. Nama Kegiatan:*\n${v('namaGiat')}\n\n`;
+        waMsg += `*2. Dasar:* ${v('dasar')}\n`;
+        waMsg += `*3. Waktu:* ${tglText} / ${waktuText}\n`;
+        waMsg += `*4. Tempat:* ${v('tempat')}\n\n`;
+        waMsg += `*5. Pimpinan Kegiatan:*\n${leaders}\n\n`;
+        waMsg += `*6. Hasil Ringkas:*\n${pembahasanFormal}\n\n`;
+        waMsg += `Demikian laporan ini dibuat dengan sebenarnya untuk dapat dipergunakan sebagai bahan pertimbangan lebih lanjut. Atas perhatian dan petunjuk Bapak Inspektur, diucapkan terima kasih.`;
+
+        const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(waMsg)}`;
+        
+        console.log("Mencoba membuka WhatsApp...");
+        window.open(url, '_blank');
+
+    } catch (error) {
+        console.error("Gagal mengirim ke WhatsApp:", error);
+        alert("Ada kesalahan teknis: " + error.message);
+     }
+}
